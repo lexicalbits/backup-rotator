@@ -1,0 +1,21 @@
+{
+    "name": "lexicalbits/BackupRotator",
+    "description": "Simple tool to stream backups to multiple rotating systems (s3, file, etc)",
+    "type": "project",
+    "require": {
+        "monolog/monolog": "^1.24",
+        "aws/aws-sdk-php": "^3.82"
+    },
+    "autoload": {
+        "psr-4": {
+          "LexicalBits\\BackupRotator\\": "src/"
+        }
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Justin Fargione",
+            "email": "justin@lexicalbits.com"
+        }
+    ]
+}

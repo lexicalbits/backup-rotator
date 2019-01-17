@@ -1,0 +1,14 @@
+[aws]
+key = 
+secret = 
+
+[logging]
+path = ./out.log
+
+[storage]
+engine = S3
+region = us-east-1
+bucket = 
+filename = backup.zip
+maxkb = 204800
+

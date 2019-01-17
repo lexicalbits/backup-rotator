@@ -1,0 +1,60 @@
+#####################################################################################################
+#
+# PHP ignored files
+# Stolen shamelessly from https://gist.github.com/mrclay/3100456
+#
+#####################################################################################################
+
+# ignore IDE/hidden/OS cache files
+.*
+*~
+nbproject
+nb-configuration.xml
+Session.vim
+*.tmproj
+*.tmproject
+tmtags
+Thumbs.db
+Desktop.ini
+
+# ignore Composer downloads
+/vendor/*
+
+# keep some hiddens
+!.htaccess
+!/.gitignore
+!/.travis.yml
+
+#####################################################################################################
+#
+# Vim ignored files
+# Stolen shamelessly from https://github.com/github/gitignore/blob/master/Global/Vim.gitignore
+#
+#####################################################################################################
+
+# Swap
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Session
+Session.vim
+
+# Temporary
+.netrwhist
+*~
+# Auto-generated tag files
+tags
+# Persistent undo
+[._]*.un~
+
+#####################################################################################################
+#
+# App ignored files
+#
+#####################################################################################################
+
+config.ini
+out.log
