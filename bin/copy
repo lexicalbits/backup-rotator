@@ -3,32 +3,16 @@
 require 'vendor/autoload.php';
 
 use LexicalBits\BackupRotator\StreamChunker;
-use LexicalBits\BackupRotator\Storage\S3;
+use LexicalBits\BackupRotator\Storage\Storage;
 use LexicalBits\BackupRotator\Logging;
-use Aws\Credentials\Credentials;
 
 $config = parse_ini_file('./config.ini', true);
 Logging::setPath($config['logging']['path']);
-$credentials = new Credentials($config['aws']['key'], $config['aws']['secret']);
+$storage = Storage::factory($config['storage']);
 
-$storage = new S3(
-    $config['storage']['region'],
-    $config['storage']['bucket'],
-    $config['storage']['filename'],
-    $credentials
-);
 $chunker = new StreamChunker("php://stdin", function (string $data, int $idx) use ($storage) {
     $storage->onChunk($data, $idx);
 }, $storage::CHUNK_SIZE_KB, $config['storage']['maxkb']);
 
 $chunker->run();
 $storage->onEnd();
-
-/* File-based
-$outfile = fopen('./out', 'w');
-$chunker = new StreamChunker("php://stdin", function (string $data, int $chunk) use ($outfile) {
-    fwrite($outfile, $data);
-});
-$chunker->run();
-fclose($outfile);
- */

@@ -1,14 +1,26 @@
 [aws]
-key = 
-secret = 
 
 [logging]
 path = ./out.log
 
+; Amazon S3-based storage
 [storage]
-engine = S3
-region = us-east-1
-bucket = 
+engine = S3Storage
 filename = backup.zip
 maxkb = 204800
+region = us-east-1
+bucket = 
+; These can be left out if you'd prefer to rely on AWS's environment variable extraction
+aws_key = 
+aws_secret = 
 
+; Local filesystem storage
+; [storage]
+; engine = FileStorage
+; path = /var/backup/backup.zip
+
+; Custom storage: extend LexicalBits\BackupRotator\Storage\Storage and point this at it
+; [storage]
+; engine = MyNamespace\MyClass
+; var1 = foo
+; var2 = bar

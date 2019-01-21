@@ -3,14 +3,46 @@ namespace LexicalBits\BackupRotator\Storage;
 
 use LexicalBits\BackupRotator\Logging;
 use Aws\S3\S3Client;
+use Aws\Credentials\Credentials;
 
 /**
  * Class: S3 - A "smart" S3 storage system that will use multipart uploads if files are sufficiently large.
  *
  * @see Storage
  */
-class S3 extends Storage
+class S3Storage extends Storage
 {
+    /**
+     * Generate an S3Storage instance from a given config
+     *
+     * @param array $config Configuration data: region/bucket/filename required, aws_key/aws_secret optional
+     */
+    static public function fromConfig(array $config)
+    {
+        $credentials = null;
+        if (isset($config['aws_key']) && isset($config['aws_secret'])) {
+            $credentials = new Credentials($config['aws_key'], $config['aws_secret']);
+        } else if (isset($config['aws_key']) && isset($config['aws_secret'])) {
+            throw new StorageException(
+                'Both aws_key and aws_secret need to be present to use custom credentials',
+                StorageException::GENERAL_INVALID_CONFIG
+            );
+        }
+        foreach (['region', 'bucket', 'filename'] as $key) {
+            if (!isset($config[$key])) {
+                throw new StorageException(
+                    sprintf('Missing required key "%s"', $key),
+                    StorageException::GENERAL_INVALID_CONFIG
+                );
+            }
+        }
+        return new S3Storage(
+            $config['region'],
+            $config['bucket'],
+            $config['filename'],
+            $credentials
+        );
+    }
     /**
      * We make our decision around 5mb chunks, the minimum needed to do a multipart upload.
      * Therefore we don't want to accept chunks smaller than this (though we can, and cache
@@ -77,7 +109,7 @@ class S3 extends Storage
         $this->parts = [];
         $this->uploadId = null;
         $this->cache = [];
-        $this->mode = S3::MODE_UNKNOWN;
+        $this->mode = S3Storage::MODE_UNKNOWN;
         $this->logger = Logging::make(__NAMESPACE__);
     }
     /**
@@ -101,7 +133,7 @@ class S3 extends Storage
         $this->cache[] = $chunk;
         $newSize = $this->cacheSize();
         $this->logger->debug(sprintf('Got chunk %d, cache is now %d bytes', $idx, $newSize));
-        if ($newSize / 1024 >= S3::MINIMUM_MULTIPART_SIZE) {
+        if ($newSize / 1024 >= S3Storage::MINIMUM_MULTIPART_SIZE) {
             $this->uploadCachedMultipart();
         }
     }
@@ -111,7 +143,7 @@ class S3 extends Storage
      */
     protected function initializeMultipart()
     {
-        $this->mode = S3::MODE_MULTIPART;
+        $this->mode = S3Storage::MODE_MULTIPART;
         $this->logger->debug(sprintf("Initializing multipart upload %s in %s\n", $this->filename, $this->bucket));
         // TODO - check for existing open upload
         $this->uploadId = $this->s3->createMultipartUpload([
@@ -129,13 +161,13 @@ class S3 extends Storage
     protected function uploadCachedMultipart()
     {
         switch ($this->mode) {
-            case S3::MODE_UPLOAD:
+            case S3Storage::MODE_UPLOAD:
                 throw new StorageException(
                     'onChunk called in upload mode - file already uploaded',
                     StorageException::S3_EXTRA_CALL
                 );
                 break;
-            case S3::MODE_UNKNOWN:
+            case S3Storage::MODE_UNKNOWN:
                 $this->initializeMultipart();
                 break;
         }
@@ -178,10 +210,10 @@ class S3 extends Storage
      */
     protected function uploadCacheSingle()
     {
-        if ($this->mode === S3::MODE_MULTIPART) {
+        if ($this->mode === S3Storage::MODE_MULTIPART) {
             throw new StorageException('uploadSingle called in multipart mode', StorageException::S3_EXTRA_CALL);
         }
-        $this->mode = S3::MODE_UPLOAD;
+        $this->mode = S3Storage::MODE_UPLOAD;
         $this->s3->putObject([
             'Bucket' => $this->bucket,
             'Key' => $this->filename,
@@ -194,7 +226,7 @@ class S3 extends Storage
      */
     public function onEnd() {
         switch ($this->mode) {
-            case S3::MODE_UNKNOWN:
+            case S3Storage::MODE_UNKNOWN:
                 if (count($this->cache) === 0) {
                     $this->logger->debug(sprintf(
                         "No upload was initialized for %s in %s\n",
@@ -208,13 +240,13 @@ class S3 extends Storage
                     $this->uploadCacheSingle();
                 }
                 break;
-            case S3::MODE_UPLOAD:
+            case S3Storage::MODE_UPLOAD:
                 throw new StorageException(
                     'onEnd called after a single upload already occurred',
                     StorageException::S3_EXTRA_CALL
                 );
                 break;
-            case S3::MODE_MULTIPART:
+            case S3Storage::MODE_MULTIPART:
                 $this->uploadCachedMultipart(); // In case there's anything left in the cache
                 $this->completeMultipart();
                 break;

@@ -3,6 +3,11 @@ namespace LexicalBits\BackupRotator\Storage;
 
 class StorageException extends \Exception
 {
+    const GENERAL_INVALID_CONFIG = 0;
+    /**
+     * A storage engine was configured that does not exist.
+     */
+    const GENERAL_INVALID_ENGINE = 10;
     /**
      * S3->OnChunk was called when it was expected to be done
      */
