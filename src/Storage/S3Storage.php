@@ -22,7 +22,7 @@ class S3Storage extends Storage
         $credentials = null;
         if (isset($config['aws_key']) && isset($config['aws_secret'])) {
             $credentials = new Credentials($config['aws_key'], $config['aws_secret']);
-        } else if (isset($config['aws_key']) && isset($config['aws_secret'])) {
+        } else if (isset($config['aws_key']) || isset($config['aws_secret'])) {
             throw new StorageException(
                 'Both aws_key and aws_secret need to be present to use custom credentials',
                 StorageException::GENERAL_INVALID_CONFIG
@@ -68,6 +68,12 @@ class S3Storage extends Storage
      */
     const MINIMUM_MULTIPART_SIZE = 5120; // 5mb minimum for multipart uploads
     /**
+     * What upload mode we've decided on.  One of the S3Storage::MODE_* constants.
+     *
+     * @var string
+     */
+    public $mode;
+    /**
      * Name of the bucket we're targetting
      *
      * @var string
@@ -80,11 +86,36 @@ class S3Storage extends Storage
      */
     protected $filename;
     /**
+     * Configured S3 client
+     *
+     * @var Aws\S3\S3Client
+     */
+    protected $s3;
+    /**
+     * Stored response data from multipart uploads
+     *
+     * @var array
+     */
+    protected $parts;
+    /**
      * If we've started a multipart upload, this is the ID AWS gave us to use.
      *
      * @var string
      */
     protected $uploadId;
+    /**
+     * Temporary storage for incoming data while we either decide if we need multipart uploads
+     * or until we have enought for a single multipart chunk.
+     *
+     * @var array
+     */
+    protected $cache;
+    /**
+     * An instance of the logger configured to this class.
+     *
+     * @var LexicalBits\BackupRotator\Logging
+     */
+    protected $logger;
     /**
      * Configure an S3 uploader.
      *

@@ -3,6 +3,7 @@ namespace LexicalBits\BackupRotator;
 
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use Monolog\Handler\NullHandler;
 
 class Logging
 {
@@ -14,7 +15,11 @@ class Logging
     static function make(string $name)
     {
         $logger = new Logger($name);
-        $logger->pushHandler(new StreamHandler(self::$path));
+        if (self::$path) {
+            $logger->pushHandler(new StreamHandler(self::$path));
+        } else {
+            $logger->pushHandler(new NullHandler());
+        }
         return $logger;
     }
 }

@@ -69,8 +69,11 @@ class StreamChunker
             call_user_func($this->onChunk, $chunk, $ctr, $this->streamName);
         }
         if ($this->totalSize >= $maxSize) {
-            $this->logger->error('Max size of %d reached, aborting.', $this->totalSize);
             // TODO cleanup script
+            throw new StreamChunkerException(
+                sprintf('Exceeded max size of %d: %d reached, aborting.', $maxSize, $this->totalSize),
+                StreamChunkerException::TOO_MUCH_DATA
+            );
         }
         fclose($stream);
     }
