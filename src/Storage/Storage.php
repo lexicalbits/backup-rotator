@@ -59,7 +59,6 @@ abstract class Storage
         $className = self::$engines[$requestedClassName];
         return ($className)::fromConfig($cfg);
     }
-
     /**
      * What to do when a chunk comes in.
      *
@@ -69,9 +68,31 @@ abstract class Storage
     abstract public function onChunk(string $chunk, int $idx);
     /**
      * What to do when we're out of chunks
-     *
      */
     abstract public function onEnd();
+    /**
+     * Get the modifiers for existing copies of the configured storage key.
+     * This should be copies requested by the storage engine in the past.
+     */
+    abstract public function getExistingCopyModifiers();
+    /**
+     * Make a copy of the configured storage key with the given modifier.
+     * Usually the storage key will be a path of some kind and the modifier a datestamp, though these
+     * decisions are made by the specific storage and rotation engines respectively.
+     *
+     * @param string $modifier Modifier string to apply to the copied resource (probably a datestamp)
+     * @param bool [$allowOverwrite=false] If true (default false) overwrite existing copies with this modifier
+     *
+     */
+    abstract public function copyWithModifier(string $modifier, bool $allowOverwrite=false);
+    /**
+     * Remove a copy of the configured storage key with the given modifier.
+     * Usually the storage key will be a path of some kind and the modifier a datestamp, though these
+     * decisions are made by the specific storage and rotation engines respectively.
+     *
+     * @param string $modifier Modifier string to apply to the copied resource (probably a datestamp)
+     */
+    abstract public function deleteWithModifier(string $modifier);
 }
 
 Storage::registerEngine('S3Storage');

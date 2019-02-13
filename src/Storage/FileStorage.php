@@ -15,6 +15,7 @@ class FileStorage extends Storage
      * I'm not sure if there is an optimal size for this.  2mb seems rightish.
      */
     const CHUNK_SIZE_KB = 2048;
+    const MODIFIER_BOUNDARY = '_';
     /**
      * Generate an S3Storage instance from a given config
      *
@@ -53,12 +54,7 @@ class FileStorage extends Storage
         $this->file = null;
         $this->logger = Logging::make(__NAMESPACE__);
     }
-    /**
-     * Handle a chunk of data.
-     *
-     * @param string $chunk Data chunk
-     * @param int $idx Which chunk this is.  Note this is just needed to match the base class spec.
-     */
+
     public function onChunk(string $chunk, int $idx)
     {
         if (!$this->file) {
@@ -67,13 +63,70 @@ class FileStorage extends Storage
         }
         fwrite($this->file, $chunk);
     }
-    /**
-     * Handle an onEnd event
-     *
-     */
+
     public function onEnd()
     {
         $this->logger->debug(sprintf('Closing %s', $this->path));
         fclose($this->file);
+    }
+
+    public function getStorageKey()
+    {
+        return $this->path;
+    }
+    public function getModifiedPath(string $modifier)
+    {
+        $pathInfo = pathinfo($this->path);
+        return implode('', [
+            $pathInfo['directory'],
+            DIRECTORY_SEPARATOR,
+            $pathInfo['filename'],
+            self::MODIFIER_BOUNDARY,
+            $modifier,
+            '.',
+            $pathInfo['extension']
+        ]);
+    }
+    public function getExistingCopyModifiers()
+    {
+        $pathInfo = pathinfo($this->path);
+        // Makes something like /^myfile_.*\.tar.gz$/
+        $pattern = sprintf(
+            '/^%s%s.*\\.%s$/',
+            $pathInfo['filename'],
+            self::MODIFIER_BOUNDARY,
+            $pathInfo['extension']
+        );
+        return array_map(
+            glob(implode(DIRECTORY_SEPARATOR, [$pathInfo['directory'], $pathInfo['filename']])),
+            function ($filename) {
+                return preg_replace($pattern, $filename);
+            }
+        );
+    }
+    public function copyWithModifier(string $modifier, bool $allowOverwrite=false)
+    {
+        $targetFile = $this->getModifiedPath($modifier);
+        $exists = file_exists($targetFile);
+        if ($allowOverwrite || !$exists) {
+            copy($this->path, $targetFile);
+            if ($exists) {
+                $this->logger->info(sprintf('Overwrite existing copy at %s', $targetFile));
+            } else {
+                $this->logger->info(sprintf('Created new copy at %s', $targetFile));
+            }
+        } else {
+            $this->logger->info(sprintf('Skipped overwriting existing copy at %s', $targetFile));
+        }
+    }
+    public function deleteWithModifier(string $modifier)
+    {
+        $targetFile = $this->getModifiedPath($modifier);
+        if (file_exists($targetFile)) {
+            $this->logger->info(sprintf('Removing existing file at %s', $targetfile));
+            unlink($targetFile);
+        } else {
+            $this->logger->info(sprintf('Cannot remove non-existent file at %s', $targetfile));
+        }
     }
 }

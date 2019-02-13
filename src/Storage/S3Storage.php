@@ -153,12 +153,6 @@ class S3Storage extends Storage
     {
         return array_sum(array_map('strlen', $this->cache));
     }
-    /**
-     * Handle a chunk of data.
-     *
-     * @param string $chunk Data chunk
-     * @param int $idx Which chunk this is.  Note this is just needed to match the base class spec.
-     */
     public function onChunk(string $chunk, int $idx)
     {
         $this->cache[] = $chunk;
@@ -251,10 +245,6 @@ class S3Storage extends Storage
             'Body' => implode('', $this->cache),
         ]);
     }
-    /**
-     * Handle an onEnd event
-     *
-     */
     public function onEnd() {
         switch ($this->mode) {
             case S3Storage::MODE_UNKNOWN:
@@ -287,5 +277,67 @@ class S3Storage extends Storage
                     StorageException::UNKNOWN_MODE
                 );
         }
+    }
+
+    public function getExistingCopyModifiers()
+    {
+        $filename = pathinfo($this->filename, PATHINFO_FILENAME);
+        $filenameLength = strlen($filename);
+        // If we find ourselves needing more items in the future, there is a paginator we can use,
+        // but the 1000 maximum results from a regular query seems fine.  In fact, we'll throw an error
+        // if we hit that cap, 'cause that probably means something went wrong...
+        $results = $this->s3->listObjects([
+            'Bucket' => $this->bucket,
+            'Prefix' => $filename
+        ]);
+        if (count($results) === 1000) {
+            throw new StorageException(
+                'Too many stored results (1000) - check your bucket for extra data',
+                StorageException::S3_TOO_MANY_FILES
+            );
+        }
+        return array_map(function ($record) {
+            return substr($record['Key'], $filenameLength);
+        }, $results);
+    }
+
+    public function assertValidModifer(string $modifier)
+    {
+        if (trim($modifer) === '') {
+            throw new StorageException('Modifier cannot be empty', StorageException::GENERAL_INVALID_MODIFIER);
+        }
+        // https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html#object-keys
+        if (strlen($modifier) + strlen($this->filename) > 1024) {
+            throw new StorageException('Modifier too long', StorageException::GENERAL_INVALID_MODIFIER);
+        }
+    }
+
+    public function copyWithModifier(string $modifier, bool $allowOverwrite=false)
+    {
+        $this->assertValidModifier($modifier);
+        $newFile = $modifier.'__'.$this->filename;
+        $exists = $this->s3->doesObjectExist($this->bucket, $newFile);
+        if ($allowOverwrite || !$exists) {
+            $this->s3->copyObject([
+                'Bucket' => $this->bucket,
+                'Key' => $newFile,
+                'CopySource' => sprintf("%s/%s", $this->bucket, $this->filename)
+            ]);
+            if ($exists) {
+                $this->logger->info(sprintf('Overwrote existing copy at %s', $targetFile));
+            } else {
+                $this->logger->info(sprintf('Created new copy at %s', $targetFile));
+            }
+        } else {
+            $this->logger->info(sprintf('Skipped overwriting existing copy at %s', $targetFile));
+        }
+    }
+    public function deleteWithModifier(string $modifier)
+    {
+        $this->assertValidModifier($modifier);
+        $this->s3->deleteObject([
+            'Bucket' => $this->bucket,
+            'Key' => $modifier.'__'.$this->filename
+        ]);
     }
 }
