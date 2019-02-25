@@ -5,14 +5,83 @@ require 'vendor/autoload.php';
 use LexicalBits\BackupRotator\StreamChunker;
 use LexicalBits\BackupRotator\Storage\Storage;
 use LexicalBits\BackupRotator\Logging;
+use LexicalBits\BackupRotator\CLI;
 
-$config = parse_ini_file('./config.ini', true);
-Logging::setPath($config['logging']['path']);
-$storage = Storage::factory($config['storage']);
+$cli = new CLI(implode(PHP_EOL, [
+  './copy.php [--config %path] [--scope %scopeName]',
+  '',
+  '--config %path (optional)',
+  '  Where to find a configuration ini file.',
+  '  If you don\'t pass a specific --config, the app will try to find a config file, in order, in:',
+  '    ~/.backup-rotator.ini',
+  '    /etc/backup-rotator.ini',
+  '',
+  '--scope %scopeName (optional)',
+  '  Which backup settings to use on the piped input.',
+  '  The default --scope is "default".'
+]), '', [
+    'config::', // Alternate config path that the default
+    'scope::'   // Configuration for this particular upload/rotate
+]);
 
-$chunker = new StreamChunker("php://stdin", function (string $data, int $idx) use ($storage) {
-    $storage->onChunk($data, $idx);
-}, $storage::CHUNK_SIZE_KB, $config['storage']['maxkb']);
+// First figure out where our backup configuration lives
+if ($cli->getOption(['config'])) {
+  $configPath = $cli->getOption(['config']);
+} else {
+  $configPath = $cli->pickPath([
+    [$_SERVER['HOME'], '.backup-rotator.ini'],
+    ['', 'etc', 'backup-rotator.ini']
+  ]);
+}
+if (!$configPath) {
+    $cli->showHelp('Either pass an explicit --config path or create one in ~/.backup-rotator.ini or /etc/backup-rotator.ini');
+    exit(1);
+}
+$config = parse_ini_file($configPath, true);
+if (isset($config['logging']) && isset($config['logging']['path'])) {
+  Logging::setPath($config['logging']['path']);
+}
 
+// Then figure out which configuration section we want.  Blank is OK, as it uses the "default" scope.
+$scopeName = $cli->getOption(['scope']) ? $cli->getOption(['scope']) : 'default';
+$scopeConfig = $config[$scopeName];
+if (!$scopeName) {
+    $cli->showHelp("No scope configuration found for ${scopeName} - check your ini file at ${configPath}");
+    exit(1);
+}
+
+// Use the scope to find which storage configurations we're using
+$storageInstances = array_map(
+    function ($storageConfig) {
+        return Storage::factory($storageConfig);
+    },
+    array_filter($config, function ($k) use ($scopeName) {
+        return strpos($k, "$scopeName.storage") === 0;
+    }, ARRAY_FILTER_USE_KEY)
+);
+if (count($storageInstances) === 0) {
+    $cli->showHelp("No storage was configured for ${scopeName} - check your ini file at ${configPath}");
+    exit(1);
+}
+
+// Figure out what the biggest chunk size we can get away with is (which will be the smallest among the given engines)
+$chunkSize = array_reduce($storageInstances, function (int $currMax, Storage $storageInstance) {
+    return (!$currMax || $currMax > $storageInstance::CHUNK_SIZE_KB) ? $storageInstance::CHUNK_SIZE_KB : $currMax;
+}, 0);
+if (!$chunkSize) {
+    throw new Error('Unable to determine an appropriate chunk size from the given storage engines');
+}
+
+// Kick off the chunker
+$chunker = new StreamChunker("php://stdin", function (string $data, int $idx) use ($storageInstances) {
+    foreach ($storageInstances as $storageInstance) {
+        $storageInstance->onChunk($data, $idx);
+    }
+}, $chunkSize, $scopeConfig['maxkb']);
 $chunker->run();
-$storage->onEnd();
+
+
+// Close out the storage engines
+foreach ($storageInstances as $storageInstance) {
+    $storageInstance->onEnd();
+}

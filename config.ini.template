@@ -1,26 +1,68 @@
-[aws]
-
 [logging]
 path = ./out.log
 
-; Amazon S3-based storage
-[storage]
-engine = S3Storage
-filename = backup.zip
+;
+;
+; Global configuration for a scope
+;
+;
+
+;
+; The default scope is what gets used if an explicit --scope isn't passed to bin/copy. Add as many as you need.
+;
+[default]
+; The absolute largest this file should ever be.  Used as a sanity check to make sure upstream code isn't going wrong.
 maxkb = 204800
+; Which rotator class to use - can be customized by extending LexicalBits\BackupRotator\Rotator\Rotator
+rotator = WMDRotator
+; Keep the last N days of files
+days = 7
+; Keep the last N months of files (for the first day of that month a backup took place)
+months = 3
+; Keep the last N years of files (for the first day of the year a backup took place)
+years = 5
+
+;
+;
+; Storage systems for a scope
+; Remove any of these you don't want to use, and edit as necessary.
+;
+;
+
+;
+; Amazon S3-based storage (.primary can be anything as long as it makes the group unique)
+;
+[default.storage.primary]
+; Which engine to use - this determines which other keys are required.
+engine = S3Storage
+; Which bucket to use - this needs to be created before the first backup.
+bucket = backups
+; Name of the file as it should appear in the bucket.
+filename = backup.zip
+; Where your bucket is hosted.
 region = us-east-1
-bucket = 
 ; These can be left out if you'd prefer to rely on AWS's environment variable extraction
 aws_key = 
 aws_secret = 
 
+;
 ; Local filesystem storage
-; [storage]
-; engine = FileStorage
-; path = /var/backup/backup.zip
+;
+; [default.storage.secondary]
+engine = FileStorage
+; Where the backup lives
+path = /var/backup/backup.zip
 
 ; Custom storage: extend LexicalBits\BackupRotator\Storage\Storage and point this at it
-; [storage]
+; [default.storage.tertiary]
 ; engine = MyNamespace\MyClass
 ; var1 = foo
 ; var2 = bar
+
+;
+; Define as many other scopes as you need...aka
+; [sqllogs]
+; [sqllogs.storage.s3]
+; [nginxlogs]
+; [nginxlogs.storage.filesystem]
+;

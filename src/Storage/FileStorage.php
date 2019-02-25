@@ -12,9 +12,12 @@ use Aws\S3\S3Client;
 class FileStorage extends Storage
 {
     /**
-     * I'm not sure if there is an optimal size for this.  2mb seems rightish.
+     * I'm not sure if there is an optimal size for this.  10mb seems rightish.
+     * Keep in mind that the smallest chunk size will be used when multiple engines
+     * are configured, so since this should be flexible, keep it larger than the rest
+     * of the engines.
      */
-    const CHUNK_SIZE_KB = 2048;
+    const CHUNK_SIZE_KB = 10240;
     const MODIFIER_BOUNDARY = '_';
     /**
      * Generate an S3Storage instance from a given config
