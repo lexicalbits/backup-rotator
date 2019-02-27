@@ -81,7 +81,7 @@ class FileStorage extends Storage
     {
         $pathInfo = pathinfo($this->path);
         return implode('', [
-            $pathInfo['directory'],
+            $pathInfo['dirname'],
             DIRECTORY_SEPARATOR,
             $pathInfo['filename'],
             self::MODIFIER_BOUNDARY,
@@ -95,17 +95,19 @@ class FileStorage extends Storage
         $pathInfo = pathinfo($this->path);
         // Makes something like /^myfile_.*\.tar.gz$/
         $pattern = sprintf(
-            '/^%s%s.*\\.%s$/',
-            $pathInfo['filename'],
-            self::MODIFIER_BOUNDARY,
-            $pathInfo['extension']
+            '/^%s%s(.*)\\.%s$/',
+            preg_quote($pathInfo['filename']),
+            preg_quote(self::MODIFIER_BOUNDARY),
+            preg_quote($pathInfo['extension'])
         );
-        return array_map(
-            glob(implode(DIRECTORY_SEPARATOR, [$pathInfo['directory'], $pathInfo['filename']])),
-            function ($filename) {
-                return preg_replace($pattern, $filename);
+        $modifiers = [];
+        if ($handle = opendir($pathInfo['dirname'])) {
+            while (($entry = readdir($handle)) !== false) {
+                $modifier = preg_replace($pattern, '$1', $entry);
+                if ($modifier && $modifier !== $entry) $modifiers[] = $modifier;
             }
-        );
+        }
+        return $modifiers;
     }
     public function copyWithModifier(string $modifier, bool $allowOverwrite=false)
     {
@@ -126,10 +128,10 @@ class FileStorage extends Storage
     {
         $targetFile = $this->getModifiedPath($modifier);
         if (file_exists($targetFile)) {
-            $this->logger->info(sprintf('Removing existing file at %s', $targetfile));
+            $this->logger->info(sprintf('Removing existing file at %s', $targetFile));
             unlink($targetFile);
         } else {
-            $this->logger->info(sprintf('Cannot remove non-existent file at %s', $targetfile));
+            $this->logger->info(sprintf('Cannot remove non-existent file at %s', $targetFile));
         }
     }
 }

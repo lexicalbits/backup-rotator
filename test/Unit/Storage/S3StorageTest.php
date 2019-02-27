@@ -15,7 +15,11 @@ final class S3StorageTest extends TestCase {
                 'createMultipartUpload',
                 'uploadPart',
                 'completeMultipartUpload',
-                'putObject'
+                'putObject',
+                'listObjects',
+                'doesObjectExist',
+                'copyObject',
+                'deleteObject'
             ])
             ->getMock();
         $this->setInternalProperty(S3Storage::class, 's3', $storage, $s3Client);
@@ -123,5 +127,71 @@ final class S3StorageTest extends TestCase {
         $storage->onChunk(str_repeat('0', (S3Storage::MINIMUM_MULTIPART_SIZE * 1024) + 1), 1);
         $storage->onEnd();
     }
-
+    public function testGetExistingCopyModifiers()
+    {
+        $storage = new S3Storage('foo', 'bar', 'baz');
+        $s3Client = $this->setS3Client($storage);
+        $s3Client->method('listObjects')
+            ->willReturn([
+                ['Key'=>'baz_aaa'],
+                ['Key'=>'baz_bbb'],
+                ['Key'=>'dummy.zip'],
+                ['Key'=>'baz_ccc']
+            ]);
+        $s3Client->expects($this->once())
+            ->method('listObjects');
+        $this->assertEquals($storage->getExistingCopyModifiers(), ['aaa', 'bbb', 'ccc']);
+    }
+    public function testCopyWithModifier()
+    {
+        $storage = new S3Storage('foo', 'bar', 'baz');
+        $s3Client = $this->setS3Client($storage);
+        $s3Client->method('doesObjectExist')
+            ->willReturn(false);
+        $s3Client->expects($this->once())
+            ->method('copyObject')
+            ->with([
+                'Bucket' => 'bar',
+                'Key' => 'baz_aaa',
+                'CopySource' => 'bar/baz'
+            ]);
+        $storage->copyWithModifier('aaa');
+    }
+    public function testCopyWithModifierNoOverwrite()
+    {
+        $storage = new S3Storage('foo', 'bar', 'baz');
+        $s3Client = $this->setS3Client($storage);
+        $s3Client->method('doesObjectExist')
+            ->willReturn(true);
+        $s3Client->expects($this->never())
+            ->method('copyObject');
+        $storage->copyWithModifier('aaa');
+    }
+    public function testCopyWithModifierCanOverwrite()
+    {
+        $storage = new S3Storage('foo', 'bar', 'baz');
+        $s3Client = $this->setS3Client($storage);
+        $s3Client->method('doesObjectExist')
+            ->willReturn(true);
+        $s3Client->expects($this->once())
+            ->method('copyObject')
+            ->with([
+                'Bucket' => 'bar',
+                'Key' => 'baz_aaa',
+                'CopySource' => 'bar/baz'
+            ]);
+        $storage->copyWithModifier('aaa', true);
+    }
+    public function testDeleteWithModifier()
+    {
+        $storage = new S3Storage('foo', 'bar', 'baz');
+        $s3Client = $this->setS3Client($storage);
+        $s3Client->expects($this->once())
+            ->method('deleteObject')
+            ->with([
+                'Bucket' => 'bar',
+                'Key' => 'baz_aaa',
+            ]);
+        $storage->deleteWithModifier('aaa');
+    }
 }

@@ -6,7 +6,8 @@ use LexicalBits\BackupRotator\Storage\Storage;
 use LexicalBits\BackupRotator\Storage\FileStorage;
 use LexicalBits\BackupRotator\Storage\StorageException;
 
-final class StorageTest extends TestCase {
+final class StorageTest extends TestCase
+{
     public function testRegisterEngineRegistersLocal()
     {
         Storage::registerEngine('Foo');
