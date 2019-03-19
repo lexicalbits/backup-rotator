@@ -8,7 +8,7 @@ path = ./out.log
 ;
 
 ;
-; The default scope is what gets used if an explicit --scope isn't passed to bin/copy. Add as many as you need.
+; The default scope is what gets used if an explicit --scope isn't passed to bin/backup-rotator. Add as many as you need.
 ;
 [default]
 ; The absolute largest this file should ever be.  Used as a sanity check to make sure upstream code isn't going wrong.

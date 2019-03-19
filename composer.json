@@ -1,6 +1,6 @@
 {
     "name": "lexicalbits/BackupRotator",
-    "description": "Simple tool to stream backups to multiple rotating systems (s3, file, etc)",
+    "description": "Pipe-friendly tool to stream data to S3 or the filesystem, then manage a set of rotating backups",
     "type": "project",
     "require": {
         "monolog/monolog": "^1.24",
@@ -10,6 +10,9 @@
         "phpunit/phpunit": "^7.5",
         "mikey179/vfsStream": "^1.6"
     },
+    "bin": [
+        "bin/backup-rotator"
+    ],
     "scripts": {
         "test": "./vendor/bin/phpunit",
         "coverage": "./vendor/bin/phpunit --coverage-text"
@@ -28,7 +31,7 @@
     "authors": [
         {
             "name": "Justin Fargione",
-            "email": "justin@lexicalbits.com"
+            "email": "oss@lexicalbits.com"
         }
     ]
 }
