@@ -11,7 +11,8 @@
         "mikey179/vfsStream": "^1.6"
     },
     "scripts": {
-        "test": "./vendor/bin/phpunit"
+        "test": "./vendor/bin/phpunit",
+        "coverage": "./vendor/bin/phpunit --coverage-text"
     },
     "autoload": {
         "psr-4": {
