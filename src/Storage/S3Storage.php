@@ -88,7 +88,7 @@ class S3Storage extends Storage
     /**
      * Configured S3 client
      *
-     * @var Aws\S3\S3Client
+     * @var S3Client
      */
     protected $s3;
     /**
@@ -100,7 +100,7 @@ class S3Storage extends Storage
     /**
      * If we've started a multipart upload, this is the ID AWS gave us to use.
      *
-     * @var string
+     * @var string|null
      */
     protected $uploadId;
     /**
@@ -113,7 +113,7 @@ class S3Storage extends Storage
     /**
      * An instance of the logger configured to this class.
      *
-     * @var LexicalBits\BackupRotator\Logging
+     * @var \Monolog\Logger
      */
     protected $logger;
     /**
@@ -122,7 +122,7 @@ class S3Storage extends Storage
      * @param string $region Which AWS region our bucket is in
      * @param string $bucket Which bucket we're targetting
      * @param string $filename What the filename should be in the bucket
-     * @param Aws\Credentials\CredentialsInterface|null $credentials Optional credentials used to initialize S3
+     * @param \Aws\Credentials\CredentialsInterface|null $credentials Optional credentials used to initialize S3
      */
     public function __construct(string $region, string $bucket, string $filename, $credentials=null)
     {
@@ -274,7 +274,7 @@ class S3Storage extends Storage
             default:
                 throw new StorageException(
                     sprintf('Stuck in an unknown mode: %s', $this->mode),
-                    StorageException::UNKNOWN_MODE
+                    StorageException::S3_UNKNOWN_MODE
                 );
         }
     }

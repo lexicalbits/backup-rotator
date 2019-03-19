@@ -29,9 +29,9 @@ class StorageException extends \Exception
      *
      * @param string $message What happened
      * @param int $code What type of issue this was (use a code CONST here)
-     * @param Exception|null $previous A previously caught error if available
+     * @param \Exception|null $previous A previously caught error if available
      */
-    public function __constructor(string $message, int $code, Exception $previous = null)
+    public function __constructor(string $message, int $code, \Exception $previous = null)
     {
         parent::__construct($message, $code, $previous);
     }

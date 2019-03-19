@@ -13,7 +13,7 @@ class TestCase extends \PHPUnit\Framework\TestCase {
      * @author	Joe Sexton <joe@webtipblog.com>
      * @param 	string $className
      * @param 	string $methodName
-     * @return	ReflectionMethod
+     * @return	\ReflectionMethod
      */
     protected function getInternalMethod(string $className, string $methodName)
     {
@@ -29,7 +29,7 @@ class TestCase extends \PHPUnit\Framework\TestCase {
      * @author	Joe Sexton <joe@webtipblog.com>
      * @param 	string $className
      * @param 	string $propertyName
-     * @return	ReflectionProperty
+     * @return	\ReflectionProperty
      */
     protected function getInternalProperty(string $className, string $propertyName)
     {

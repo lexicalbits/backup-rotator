@@ -8,14 +8,16 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^7.5",
-        "mikey179/vfsStream": "^1.6"
+        "mikey179/vfsStream": "^1.6",
+        "phpstan/phpstan": "^0.11.4"
     },
     "bin": [
         "bin/backup-rotator"
     ],
     "scripts": {
         "test": "./vendor/bin/phpunit",
-        "coverage": "./vendor/bin/phpunit --coverage-text"
+        "coverage": "./vendor/bin/phpunit --coverage-text",
+        "analyze": "./vendor/bin/phpstan analyse src test --level 4"
     },
     "autoload": {
         "psr-4": {

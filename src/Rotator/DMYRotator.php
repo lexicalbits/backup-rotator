@@ -95,7 +95,7 @@ class DMYRotator extends Rotator
     /**
      * Turn a date into a string modifier the storage engine will understand
      *
-     * @param Date $date
+     * @param \DateTime $date
      */
     protected function makeModifier(\DateTime $date)
     {

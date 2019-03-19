@@ -81,7 +81,7 @@ abstract class Storage
      * decisions are made by the specific storage and rotation engines respectively.
      *
      * @param string $modifier Modifier string to apply to the copied resource (probably a datestamp)
-     * @param bool [$allowOverwrite=false] If true (default false) overwrite existing copies with this modifier
+     * @param bool $allowOverwrite If true (default false) overwrite existing copies with this modifier
      *
      */
     abstract public function copyWithModifier(string $modifier, bool $allowOverwrite=false);

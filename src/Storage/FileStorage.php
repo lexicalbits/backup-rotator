@@ -41,11 +41,17 @@ class FileStorage extends Storage
      */
     protected $path;
     /**
-     * Open resource pointer used to write streaming data
+     * Open resource pointer used to write streaming data, is null when not open
      *
-     * @var resource
+     * @var resource|null
      */
     protected $file;
+    /**
+     * Logger bound to this instance
+     *
+     * @var \Monolog\Logger
+     */
+    protected $logger;
     /**
      * Initialize a file storage engine
      *

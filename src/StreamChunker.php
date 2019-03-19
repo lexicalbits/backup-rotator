@@ -29,6 +29,12 @@ class StreamChunker
      */
     protected $maxSizeKb;
     /**
+     * How much data has been streamed in total
+     *
+     * @var int
+     */
+    protected $totalSize;
+    /**
      * What state the instance is in.
      * Can either be StreamChunker::STATUS_NEW or StreamChunker::STATUS_USED if the stream has been read
      *
@@ -36,12 +42,18 @@ class StreamChunker
      */
     protected $status;
     /**
+     * Logger bound to this instance
+     *
+     * @var \Monolog\Logger
+     */
+    protected $logger;
+    /**
      * Configure a streaming data handler.
      *
      * @param string $streamName Name of the stream we're processing (a filename, probably)
      * @param callable $onChunk What to call with each chunk as it's consumed
      * @param int $chunkSizeKb How big we want each chunk to be (see stream_get_contents)
-     * @param int $maxSize The absolute biggest this file should be.  Acts as a sanity check for broken streams.
+     * @param int $maxSizeKb The absolute biggest this file should be.  Acts as a sanity check for broken streams.
      */
     public function __construct(string $streamName, callable $onChunk, int $chunkSizeKb=1024, int $maxSizeKb=10240)
     {
