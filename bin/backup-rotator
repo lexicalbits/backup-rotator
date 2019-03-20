@@ -8,7 +8,7 @@ use LexicalBits\BackupRotator\Logging;
 use LexicalBits\BackupRotator\CLI;
 
 $cli = new CLI(implode(PHP_EOL, [
-  './backup-rotator.php [--config %path] [--scope %scopeName]',
+  './backup-rotator [--config %path] [--scope %scopeName]',
   '',
   '--config %path (optional)',
   '  Where to find a configuration ini file.',
