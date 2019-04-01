@@ -4,6 +4,7 @@ require 'vendor/autoload.php';
 
 use LexicalBits\BackupRotator\StreamChunker;
 use LexicalBits\BackupRotator\Storage\Storage;
+use LexicalBits\BackupRotator\Rotator\Rotator;
 use LexicalBits\BackupRotator\Logging;
 use LexicalBits\BackupRotator\CLI;
 
@@ -21,7 +22,8 @@ $cli = new CLI(implode(PHP_EOL, [
   '  The default --scope is "default".'
 ]), '', [
     'config::', // Alternate config path that the default
-    'scope::'   // Configuration for this particular upload/rotate
+    'scope::',  // Configuration for this particular upload/rotate
+    'date::',   // Fake "today" to run the backup as in order to test rotation.  Left undocumented on purpose.
 ]);
 
 // First figure out where our backup configuration lives
@@ -50,15 +52,16 @@ if (!$scopeName) {
     exit(1);
 }
 
+$storageInstances = [];
+$rotatorInstances = [];
 // Use the scope to find which storage configurations we're using
-$storageInstances = array_map(
-    function ($storageConfig) {
-        return Storage::factory($storageConfig);
-    },
-    array_filter($config, function ($k) use ($scopeName) {
-        return strpos($k, "$scopeName.storage") === 0;
-    }, ARRAY_FILTER_USE_KEY)
-);
+foreach (array_filter($config, function ($k) use ($scopeName) {
+    return strpos($k, "$scopeName.storage") === 0;
+}, ARRAY_FILTER_USE_KEY) as $storageConfig) {
+    $storage = Storage::factory($storageConfig);
+    $storageInstances[] = $storage;
+    $rotatorInstances[] = Rotator::factory($storage, $storageConfig);
+}
 if (count($storageInstances) === 0) {
     $cli->showHelp("No storage was configured for ${scopeName} - check your ini file at ${configPath}");
     exit(1);
@@ -80,8 +83,12 @@ $chunker = new StreamChunker("php://stdin", function (string $data, int $idx) us
 }, $chunkSize, $scopeConfig['maxkb']);
 $chunker->run();
 
-
 // Close out the storage engines
 foreach ($storageInstances as $storageInstance) {
     $storageInstance->onEnd();
+}
+
+// Now we can actually rotate the backups we've made
+foreach ($rotatorInstances as $rotatorInstance) {
+    $rotatorInstance->rotate();
 }

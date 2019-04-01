@@ -13,6 +13,10 @@ class StorageException extends \Exception
      */
     const GENERAL_INVALID_MODIFIER = 20;
     /**
+     * Could not open a file for writing
+     */
+    const FILE_FAILED_TO_OPEN = 200;
+    /**
      * S3->onChunk was called when it was expected to be done
      */
     const S3_EXTRA_CALL = 300;

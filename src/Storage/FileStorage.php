@@ -28,7 +28,7 @@ class FileStorage extends Storage
     {
         if (!isset($config['path'])) {
             throw new StorageException(
-                sprintf('Missing required key "path"'),
+                'Missing required key "path"',
                 StorageException::GENERAL_INVALID_CONFIG
             );
         }
@@ -64,11 +64,32 @@ class FileStorage extends Storage
         $this->logger = Logging::make(__NAMESPACE__);
     }
 
+    protected function safeOpen(string $path, string $mode)
+    {
+        // c/o https://arp242.net/weblog/php-fopen-is-broken.html
+        $fp = null;
+        // First we eat any error messages external tools might've registered for failures
+        try {
+            $fp = @fopen($path, $mode);
+        }
+        catch (\Exception $exc) { }
+
+        // Then we perform our original check on the resulting pointer and throw a saner error if it fails
+        if (!$fp) {
+            $err = error_get_last();
+            throw new StorageException(
+                sprintf('Could not open file %s for writing: %s', $path, $err['message']),
+                StorageException::FILE_FAILED_TO_OPEN
+            );
+        }
+        return $fp;
+    }
+
     public function onChunk(string $chunk, int $idx)
     {
         if (!$this->file) {
             $this->logger->debug(sprintf('Opening %s for writing', $this->path));
-            $this->file = fopen($this->path, 'w');
+            $this->file = $this->safeOpen($this->path, 'w');
         }
         fwrite($this->file, $chunk);
     }

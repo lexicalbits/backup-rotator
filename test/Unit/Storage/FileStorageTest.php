@@ -38,6 +38,15 @@ final class FileStorageTest extends TestCase {
         $storage->onChunk('abc123', 1);
         $this->assertEquals(file_get_contents($path), 'abc123');
     }
+    public function testOnChunkThrowsWithBadPath()
+    {
+        $this->expectException(StorageException::class);
+        $this->expectExceptionCode(StorageException::FILE_FAILED_TO_OPEN);
+        $this->expectExceptionMessage('open file');
+        $path = vfsStream::url('notatest/test.zip');
+        $storage = new FileStorage($path);
+        $storage->onChunk('abc123', 1);
+    }
     public function testOnEndClosesFile()
     {
         $path = vfsStream::url('test/test.zip');

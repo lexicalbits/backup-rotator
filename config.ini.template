@@ -13,14 +13,6 @@ path = ./out.log
 [default]
 ; The absolute largest this file should ever be.  Used as a sanity check to make sure upstream code isn't going wrong.
 maxkb = 204800
-; Which rotator class to use - can be customized by extending LexicalBits\BackupRotator\Rotator\Rotator
-rotator = WMDRotator
-; Keep the last N days of files
-days = 7
-; Keep the last N months of files (for the first day of that month a backup took place)
-months = 3
-; Keep the last N years of files (for the first day of the year a backup took place)
-years = 5
 
 ;
 ;
@@ -41,7 +33,15 @@ bucket = backups
 filename = backup.zip
 ; Where your bucket is hosted.
 region = us-east-1
+; Which rotator class to use - can be customized by extending LexicalBits\BackupRotator\Rotator\Rotator
+rotator = DMYRotator
 ; These can be left out if you'd prefer to rely on AWS's environment variable extraction
+; Keep the last N days of files
+days = 7
+; Keep the last N months of files (for the first day of that month a backup took place)
+months = 3
+; Keep the last N years of files (for the first day of the year a backup took place)
+years = 5
 aws_key = 
 aws_secret = 
 
@@ -52,6 +52,14 @@ aws_secret =
 engine = FileStorage
 ; Where the backup lives
 path = /var/backup/backup.zip
+; Which rotator class to use - can be customized by extending LexicalBits\BackupRotator\Rotator\Rotator
+rotator = DMYRotator
+; Keep the last N days of files
+days = 7
+; Keep the last N months of files (for the first day of that month a backup took place)
+months = 3
+; Keep the last N years of files (for the first day of the year a backup took place)
+years = 5
 
 ; Custom storage: extend LexicalBits\BackupRotator\Storage\Storage and point this at it
 ; [default.storage.tertiary]

@@ -8,7 +8,7 @@ if I wanted to back up an encrypted copy of my system's `/etc` folder regularly,
 crontab:
 
 ```cron
-0 0 * * * tar -czf - etc | gpg --encrypt | /opt/BackupRotator/bin/backup-rotator --scope etc
+0 0 * * * tar -czf - etc | gpg --encrypt | /opt/BackupRotator/bin/backup-rotator --scope=etc
 ```
 
 While its primary goal is to be used as a binary tool, all classes and methods are exposed via PSR-4 and can easily
@@ -68,7 +68,7 @@ aws_secret =
 ```
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-0 0 * * *   root    tar -czf - etc | gpg --encrypt | /opt/BackupRotator/bin/backup-rotator --scope etc
+0 0 * * *   root    tar -czf - etc | gpg --encrypt | /opt/BackupRotator/bin/backup-rotator --scope=etc
 ```
 
 ### Monthly photo and daily document snapshots to a mounted NAS
@@ -101,8 +101,8 @@ path = /media/home-nas/documents
 
 **crontab -e**
 ```
-0 0 1 * * joesmith tar -czf - /home/joesmith/Pictures | /home/joesmith/BackupRotator/bin/backup-rotator --scope photos
-0 0 * * * joesmith tar -czf - /home/joesmith/Documents | /home/joesmith/BackupRotator/bin/backup-rotator --scope documents
+0 0 1 * * joesmith tar -czf - /home/joesmith/Pictures | /home/joesmith/BackupRotator/bin/backup-rotator --scope=photos
+0 0 * * * joesmith tar -czf - /home/joesmith/Documents | /home/joesmith/BackupRotator/bin/backup-rotator --scope=documents
 ```
 
 ## Why you should use this

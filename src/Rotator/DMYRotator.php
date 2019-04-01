@@ -10,6 +10,9 @@ use LexicalBits\BackupRotator\Storage\Storage;
  */
 class DMYRotator extends Rotator
 {
+    const DEFAULT_DAYS = 7;
+    const DEFAULT_MONTHS = 6;
+    const DEFAULT_YEARS = 10;
     /**
      * The engine we're using for rotation
      *
@@ -40,8 +43,21 @@ class DMYRotator extends Rotator
      * @var \DateTime
      */
     protected $dateOfRecord;
-    static public function fromConfig(array $config)
+    static public function fromConfig(Storage $storage, array $config)
     {
+        $days = isset($config['days']) ? $config['days'] : DMYRotator::DEFAULT_DAYS;
+        $months = isset($config['months']) ? $config['months'] : DMYRotator::DEFAULT_MONTHS;
+        $years = isset($config['years']) ? $config['years'] : DMYRotator::DEFAULT_YEARS;
+        if (!is_numeric($days)) {
+            throw new \Exception('Configured DMYRotator days must be a numeric value');
+        }
+        if (!is_numeric($months)) {
+            throw new \Exception('Configured DMYRotator months must be a numeric value');
+        }
+        if (!is_numeric($years)) {
+            throw new \Exception('Configured DMYRotator years must be a numeric value');
+        }
+        return new DMYRotator($storage, (int)$days, (int)$months, (int)$years);
     }
     /**
      * Make a rotator that keeps a certain number of days in each category.
@@ -115,3 +131,5 @@ class DMYRotator extends Rotator
         }
     }
 }
+
+

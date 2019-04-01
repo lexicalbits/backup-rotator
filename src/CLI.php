@@ -52,7 +52,7 @@ class CLI
      */
     public function getOption(array $possibleKeys)
     {
-        return array_reduce($this->options, function ($found, $key) {
+        return array_reduce($possibleKeys, function ($found, $key) {
             if (!$found) {
                 return $this->options[$key] ?? null;
             }
