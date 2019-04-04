@@ -139,6 +139,7 @@ class S3Storage extends Storage
         ];
         if ($credentials) {
             $cfg['credentials'] = $credentials;
+            unset($cfg['profile']);
         }
         $this->s3 = new S3Client($cfg);
         $this->parts = [];
