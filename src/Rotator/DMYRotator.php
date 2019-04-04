@@ -99,7 +99,7 @@ class DMYRotator extends Rotator
         // Years, working backwards from the first day of this year.
         for($i = 0; $i < $this->yearsToKeep; $i ++) {
             $date = clone $this->dateOfRecord;
-            $date->modify('first day of this year');
+            $date->modify('first day of January');
             $date->modify('-'.$i.' year');
             $dates[] = $date;
         }
