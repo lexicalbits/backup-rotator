@@ -18,6 +18,9 @@ class FileStorage extends Storage
      * of the engines.
      */
     const CHUNK_SIZE_KB = 10240;
+    /**
+     * What character we use to isolate the base filename from the rotator's modifiers
+     */
     const MODIFIER_BOUNDARY = '_';
     /**
      * Generate an S3Storage instance from a given config
@@ -113,8 +116,7 @@ class FileStorage extends Storage
             $pathInfo['filename'],
             self::MODIFIER_BOUNDARY,
             $modifier,
-            '.',
-            $pathInfo['extension']
+            isset($pathInfo['extension']) ? '.'.$pathInfo['extension'] : ''
         ]);
     }
     public function getExistingCopyModifiers()
@@ -122,10 +124,10 @@ class FileStorage extends Storage
         $pathInfo = pathinfo($this->path);
         // Makes something like /^myfile_.*\.tar.gz$/
         $pattern = sprintf(
-            '/^%s%s(.*)\\.%s$/',
+            '/^%s%s(.*)%s$/',
             preg_quote($pathInfo['filename']),
             preg_quote(self::MODIFIER_BOUNDARY),
-            preg_quote($pathInfo['extension'])
+            preg_quote(isset($pathInfo['extension']) ? '.'.$pathInfo['extension'] : '')
         );
         $modifiers = [];
         if ($handle = opendir($pathInfo['dirname'])) {

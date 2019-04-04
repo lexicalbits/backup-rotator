@@ -4,7 +4,8 @@
     "type": "project",
     "require": {
         "monolog/monolog": "^1.24",
-        "aws/aws-sdk-php": "^3.82"
+        "aws/aws-sdk-php": "^3.82",
+        "php": "7.2.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^7.5",

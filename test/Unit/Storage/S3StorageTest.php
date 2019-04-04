@@ -133,10 +133,12 @@ final class S3StorageTest extends TestCase {
         $s3Client = $this->setS3Client($storage);
         $s3Client->method('listObjects')
             ->willReturn([
-                ['Key'=>'baz_aaa'],
-                ['Key'=>'baz_bbb'],
-                ['Key'=>'dummy.zip'],
-                ['Key'=>'baz_ccc']
+                'Contents' => [
+                    ['Key'=>'baz_aaa'],
+                    ['Key'=>'baz_bbb'],
+                    ['Key'=>'dummy.zip'],
+                    ['Key'=>'baz_ccc']
+                ]
             ]);
         $s3Client->expects($this->once())
             ->method('listObjects');

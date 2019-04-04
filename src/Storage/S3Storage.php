@@ -50,6 +50,10 @@ class S3Storage extends Storage
      */
     const CHUNK_SIZE_KB = 5120;
     /**
+     * What character we use to isolate the base filename from the rotator's modifiers
+     */
+    const MODIFIER_BOUNDARY = '_';
+    /**
      * We haven't yet figured out how we're going to upload the file and are waiting on additional
      * data or an onEnd call.
      */
@@ -281,27 +285,47 @@ class S3Storage extends Storage
 
     public function getExistingCopyModifiers()
     {
-        $basename = pathinfo($this->filename, PATHINFO_BASENAME);
+        $pathInfo = pathinfo($this->filename);
+        $filename = $pathInfo['filename'];
         // If we find ourselves needing more items in the future, there is a paginator we can use,
         // but the 1000 maximum results from a regular query seems fine.  In fact, we'll throw an error
         // if we hit that cap, 'cause that probably means something went wrong...
-        $results = $this->s3->listObjects([
+        $reply = $this->s3->listObjects([
             'Bucket' => $this->bucket
         ]);
+        $results = $reply['Contents'];
         if (count($results) === 1000) {
             throw new StorageException(
                 'Too many stored results (1000) - check your bucket for extra data',
                 StorageException::S3_TOO_MANY_FILES
             );
         }
+        // Figure out a regex we can use to extract a modifier from a file that matches our modified format
+        // Makes something like /^myfile_.*\.tar.gz$/
+        $pattern = sprintf(
+            '/^%s%s(.*)\\.?%s$/',
+            preg_quote($filename),
+            preg_quote(self::MODIFIER_BOUNDARY),
+            preg_quote(isset($pathInfo['extension']) ? '.'.$pathInfo['extension'] : '')
+        );
         // The extra call to values is because filter persists the original key (even though the resulting array is
         // not sparse)
-        return array_values(array_filter(array_map(function ($record) use ($basename) {
-            $thisBasename = pathinfo($record['Key'], PATHINFO_BASENAME);
-            return strpos($thisBasename, $basename) === 0
-                ? str_replace($basename.'_', '', $thisBasename)
-                : null;
+        return array_values(array_filter(array_map(function ($record) use ($pattern) {
+            $entry = $record['Key'];
+            $modifier = preg_replace($pattern, '$1', $entry);
+            if ($modifier && $modifier !== $entry) return $modifier;
+            return null;
         }, $results)));
+    }
+    public function getModifiedPath(string $modifier)
+    {
+        $pathInfo = pathinfo($this->filename);
+        return implode('', [
+            $pathInfo['filename'],
+            self::MODIFIER_BOUNDARY,
+            $modifier,
+            isset($pathInfo['extension']) ? '.'.$pathInfo['extension'] : ''
+        ]);
     }
 
     protected function assertValidModifier(string $modifier)
@@ -314,21 +338,11 @@ class S3Storage extends Storage
             throw new StorageException('Modifier too long', StorageException::GENERAL_INVALID_MODIFIER);
         }
     }
-    protected function getFilenameWithModifier(string $modifier)
-    {
-        $info = pathinfo($this->filename);
-        return implode('', [
-            $info['basename'],
-            '_',
-            $modifier,
-            empty($info['extension']) ? '' : '.'.$info['extension']
-        ]);
-    }
 
     public function copyWithModifier(string $modifier, bool $allowOverwrite=false)
     {
         $this->assertValidModifier($modifier);
-        $targetFile = $this->getFilenameWithModifier($modifier);
+        $targetFile = $this->getModifiedPath($modifier);
         $exists = $this->s3->doesObjectExist($this->bucket, $targetFile);
         if ($allowOverwrite || !$exists) {
             $this->s3->copyObject([
@@ -350,7 +364,7 @@ class S3Storage extends Storage
         $this->assertValidModifier($modifier);
         $this->s3->deleteObject([
             'Bucket' => $this->bucket,
-            'Key' => $this->getFilenameWithModifier($modifier)
+            'Key' => $this->getModifiedPath($modifier)
         ]);
     }
 }
