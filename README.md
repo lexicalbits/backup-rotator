@@ -105,6 +105,28 @@ path = /media/home-nas/documents
 0 0 * * * joesmith tar -czf - /home/joesmith/Documents | /home/joesmith/BackupRotator/bin/backup-rotator --scope=documents
 ```
 
+## Installation
+
+Here's how to install on Ubuntu 18.04 and presumably later:
+
+```sh
+sudo apt install php-cli composer php-xml
+git clone git@github.com:lexicalbits/backup-rotator.git
+cd backup-rotator
+composer install --no-dev
+
+# DO ONE OF THE FOLLOWING:
+# Want to install global rules?
+sudo cp config.ini.template /etc/backup-rotator.ini
+# Or would you prefer to run on a per-user basis?
+cp config.ini.template ~/.backup-rotator.ini
+
+# Run this if you want to make the script globally available
+ln -s `realpath bin/backup-rotator` /usr/local/bin
+
+# Set up your ini file with the backup scopes you want to use
+```
+
 ## Why you should use this
 
 There are a lot of backup tools out there, and others might be a better fit for how you want to work.  Here's some
