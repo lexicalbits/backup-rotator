@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a CLI-based backup utility designed to help keep a regular rotation of backups inn one or more storage systems.
+This is a CLI-based utility designed to help keep a regular rotation of backups in one or more storage systems.
 It's meant to fit quietly into a backup pipeline, rather than to be a full-fledged, stand-alone utility.  For example,
 if I wanted to back up an encrypted copy of my system's `/etc` folder regularly, I'd add the following line to my
 crontab:
@@ -18,7 +18,7 @@ be incorporated into other projects as well.
 
 #### Configs
 The rotator currently relies on configuration in a special .ini file (see `config.ini.template` for format
-details).  The `backup-rotate` binary will first look for this file in `/.backup-rotator.ini`, then in
+details).  The `backup-rotate` binary will first look for this file in `~/.backup-rotator.ini`, then in
 `/etc/backup-rotator.ini`.
 
 #### Storage
@@ -50,9 +50,6 @@ path = /var/log/backup-rotator.ini
 
 [etc]
 maxkb = 204800
-days = 7
-months = 3
-years = 5
 
 [etc.storage.primary]
 engine = S3Storage
@@ -61,6 +58,10 @@ filename = etc.tar.gz
 region = us-east-1
 aws_key = 
 aws_secret = 
+rotator = DMYRotator
+days = 7
+months = 3
+years = 5
 ```
 
 **/etc/cron.d/backup-rotator**
@@ -80,23 +81,25 @@ path = ~/backup-rotator.log
 
 [photos]
 maxkb = 10485760
-days = 0
-months = 1
-years = 5
 
 [photos.storage.default]
 engine = FileStorage
 path = /media/home-nas/photos
+rotator = DMYRotator
+days = 0
+months = 1
+years = 5
 
 [documents]
 maxkb = 204800
-days = 2
-months = 6
-years = 10
 
 [documents.storage.default]
 engine = FileStorage
 path = /media/home-nas/documents
+rotator = DMYRotator
+days = 2
+months = 6
+years = 10
 ```
 
 **crontab -e**
